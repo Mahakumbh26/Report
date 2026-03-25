@@ -9,5 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Correct CMD (important fix)
-CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:$PORT --workers 1--timeout 120"]
+# IMPORTANT FIX (Railway port issue solved)
+CMD ["sh", "-c", "exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"]
