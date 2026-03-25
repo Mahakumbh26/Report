@@ -28,10 +28,9 @@ def get_metric(query: str) -> Optional[float]:
         # Return first result value (index 1 is the value, index 0 is timestamp)
         return float(results[0]["value"][1])
 
-    except requests.exceptions.ConnectionError:
-        raise ConnectionError("Prometheus is not reachable at " + PROMETHEUS_URL)
-    except requests.exceptions.Timeout:
-        raise TimeoutError("Prometheus request timed out")
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        # Return None gracefully — callers handle missing metrics
+        return None
     except (KeyError, IndexError, ValueError):
         return None
 
