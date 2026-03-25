@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>EMS Monitoring Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #222; }
+    .page { max-width: 960px; margin: 30px auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); overflow: hidden; }
+
+    /* ── COVER ── */
+    .cover { background: linear-gradient(135deg, #0d1b6e 0%, #1565c0 100%); color: #fff; padding: 48px 48px 36px; }
+    .cover .logo { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 28px; }
+    .cover h1 { font-size: 32px; font-weight: 800; line-height: 1.2; }
+    .cover h2 { font-size: 16px; font-weight: 400; margin-top: 8px; opacity: 0.85; }
+    .cover-meta { display: flex; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
+    .cover-meta div { font-size: 12px; opacity: 0.75; }
+    .cover-meta div span { display: block; font-size: 14px; font-weight: 600; opacity: 1; margin-top: 2px; }
+    .status-pill { display: inline-block; padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-top: 20px; }
+    .HEALTHY  { background: #e8f5e9; color: #1b5e20; }
+    .WARNING  { background: #fff8e1; color: #e65100; }
+    .DEGRADED { background: #fff3e0; color: #bf360c; }
+    .CRITICAL { background: #ffebee; color: #b71c1c; }
+
+    /* ── SECTIONS ── */
+    .section { padding: 32px 48px; border-bottom: 1px solid #eef0f4; }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #1565c0;
+      border-left: 4px solid #1565c0; padding-left: 10px;
+      margin-bottom: 20px;
+    }
+
+    /* ── EXECUTIVE SUMMARY ── */
+    .exec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    .exec-card { border: 1px solid #e3e8f0; border-radius: 8px; padding: 18px 14px; text-align: center; background: #f8faff; }
+    .exec-card .ec-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; }
+    .exec-card .ec-value { font-size: 26px; font-weight: 800; color: #0d1b6e; margin: 6px 0 2px; }
+    .ec-ok   { color: #2e7d32 !important; }
+    .ec-warn { color: #e65100 !important; }
+    .ec-crit { color: #b71c1c !important; }
+    .exec-card .ec-sub { font-size: 11px; color: #aaa; }
+
+    /* ── METRICS TABLE ── */
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.data-table thead tr { background: #0d1b6e; color: #fff; }
+    table.data-table thead th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; }
+    table.data-table tbody tr:nth-child(even) { background: #f8faff; }
+    table.data-table tbody td { padding: 10px 14px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .badge-ok   { background: #e8f5e9; color: #2e7d32; }
+    .badge-warn { background: #fff3e0; color: #e65100; }
+    .badge-high { background: #ffe0b2; color: #bf360c; }
+    .badge-crit { background: #ffcdd2; color: #b71c1c; }
+
+    /* ── ISSUE CARDS ── */
+    .issue-card { border-radius: 8px; padding: 20px 22px; margin-bottom: 16px; border-left: 5px solid #ccc; }
+    .issue-card.CRITICAL { border-left-color: #b71c1c; background: #fff5f5; }
+    .issue-card.HIGH     { border-left-color: #e65100; background: #fff8f3; }
+    .issue-card.MEDIUM   { border-left-color: #f9a825; background: #fffdf0; }
+    .issue-card .ic-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .issue-card .ic-title { font-size: 15px; font-weight: 700; }
+    .issue-card .ic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; font-size: 13px; }
+    .issue-card .ic-row label { font-weight: 600; color: #555; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+    .no-issues { text-align: center; padding: 28px; color: #2e7d32; font-size: 15px; font-weight: 600; background: #f1f8f1; border-radius: 8px; }
+
+    /* ── BUSINESS IMPACT TABLE ── */
+    .impact-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .impact-table th { background: #f0f4ff; color: #0d1b6e; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; border-bottom: 2px solid #c5cae9; }
+    .impact-table td { padding: 10px 14px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+    .impact-table tr:hover td { background: #f8faff; }
+
+    /* ── RECOMMENDATIONS ── */
+    .rec-list { list-style: none; }
+    .rec-list li { padding: 10px 14px 10px 36px; position: relative; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .rec-list li:before { content: "→"; position: absolute; left: 12px; color: #1565c0; font-weight: 700; }
+    .rec-list li:last-child { border-bottom: none; }
+    .rec-list li strong { color: #0d1b6e; }
+
+    /* ── FOOTER ── */
+    .footer { background: #f8faff; padding: 18px 48px; font-size: 11px; color: #aaa; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ COVER ══ -->
+  <div class="cover">
+    <div class="logo">Employee Management System · Infrastructure Division</div>
+    <h1>EMS Monitoring Report</h1>
+    <h2>Production Infrastructure Health &amp; Performance Analysis</h2>
+    <div class="cover-meta">
+      <div>Report Generated<span>{{ timestamp }}</span></div>
+      <div>Report Type<span>Automated Monitoring</span></div>
+      <div>Prepared By<span>EMS Monitor API</span></div>
+      <div>Audience<span>Business Analyst / Management</span></div>
+    </div>
+    <div class="status-pill {{ analysis.overall_status }}">
+      Overall System Status: {{ analysis.overall_status }}
+    </div>
+  </div>
+
+  <!-- ══ EXECUTIVE SUMMARY ══ -->
+  <div class="section">
+    <div class="section-title">Executive Summary</div>
+    <div class="exec-grid">
+      <div class="exec-card">
+        <div class="ec-label">Total Issues</div>
+        <div class="ec-value {% if analysis.total_issues > 0 %}ec-warn{% else %}ec-ok{% endif %}">
+          {{ analysis.total_issues }}
+        </div>
+        <div class="ec-sub">Detected</div>
+      </div>
+      <div class="exec-card">
+        <div class="ec-label">Healthy Metrics</div>
+        <div class="ec-value ec-ok">{{ analysis.healthy_metrics | length }}</div>
+        <div class="ec-sub">Within threshold</div>
+      </div>
+      {% set crit = analysis.issues | selectattr("severity","equalto","CRITICAL") | list %}
+      {% set high = analysis.issues | selectattr("severity","equalto","HIGH") | list %}
+      <div class="exec-card">
+        <div class="ec-label">Critical Alerts</div>
+        <div class="ec-value {% if crit|length > 0 %}ec-crit{% else %}ec-ok{% endif %}">{{ crit|length }}</div>
+        <div class="ec-sub">Immediate action</div>
+      </div>
+      <div class="exec-card">
+        <div class="ec-label">High Alerts</div>
+        <div class="ec-value {% if high|length > 0 %}ec-warn{% else %}ec-ok{% endif %}">{{ high|length }}</div>
+        <div class="ec-sub">Needs attention</div>
+      </div>
+      {% if metrics.cpu_usage is not none %}
+      <div class="exec-card">
+        <div class="ec-label">CPU Usage</div>
+        <div class="ec-value {% if metrics.cpu_usage > 80 %}ec-crit{% elif metrics.cpu_usage > 60 %}ec-warn{% else %}ec-ok{% endif %}">
+          {{ "%.1f"|format(metrics.cpu_usage) }}%
+        </div>
+        <div class="ec-sub">Current</div>
+      </div>
+      {% endif %}
+      {% if metrics.memory_usage is not none %}
+      <div class="exec-card">
+        <div class="ec-label">Memory Usage</div>
+        <div class="ec-value {% if metrics.memory_usage > 75 %}ec-crit{% elif metrics.memory_usage > 60 %}ec-warn{% else %}ec-ok{% endif %}">
+          {{ "%.1f"|format(metrics.memory_usage) }}%
+        </div>
+        <div class="ec-sub">Current</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══ METRICS SUMMARY ══ -->
+  <div class="section">
+    <div class="section-title">Metrics Summary — Current Snapshot</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Current Value</th>
+          <th>Threshold</th>
+          <th>Status</th>
+          <th>Trend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if metrics.cpu_usage is not none %}
+        <tr>
+          <td>CPU Utilization</td>
+          <td><strong>{{ "%.2f"|format(metrics.cpu_usage) }}%</strong></td>
+          <td>80%</td>
+          <td>
+            {% if metrics.cpu_usage > 80 %}
+              <span class="badge badge-crit">CRITICAL</span>
+            {% elif metrics.cpu_usage > 60 %}
+              <span class="badge badge-warn">WARNING</span>
+            {% else %}
+              <span class="badge badge-ok">NORMAL</span>
+            {% endif %}
+          </td>
+          <td>{{ metrics.cpu_trend_points | default(0) }} data points</td>
+        </tr>
+        {% endif %}
+        {% if metrics.memory_usage is not none %}
+        <tr>
+          <td>Memory Utilization</td>
+          <td><strong>{{ "%.2f"|format(metrics.memory_usage) }}%</strong></td>
+          <td>75%</td>
+          <td>
+            {% if metrics.memory_usage > 75 %}
+              <span class="badge badge-high">HIGH</span>
+            {% elif metrics.memory_usage > 60 %}
+              <span class="badge badge-warn">WARNING</span>
+            {% else %}
+              <span class="badge badge-ok">NORMAL</span>
+            {% endif %}
+          </td>
+          <td>—</td>
+        </tr>
+        {% endif %}
+        {% if metrics.error_rate is not none %}
+        <tr>
+          <td>HTTP Error Rate</td>
+          <td><strong>{{ "%.2f"|format(metrics.error_rate) }}%</strong></td>
+          <td>5%</td>
+          <td>
+            {% if metrics.error_rate > 20 %}
+              <span class="badge badge-crit">CRITICAL</span>
+            {% elif metrics.error_rate > 5 %}
+              <span class="badge badge-high">HIGH</span>
+            {% else %}
+              <span class="badge badge-ok">NORMAL</span>
+            {% endif %}
+          </td>
+          <td>—</td>
+        </tr>
+        {% endif %}
+        {% if metrics.http_request_rate is not none %}
+        <tr>
+          <td>HTTP Request Rate</td>
+          <td><strong>{{ "%.2f"|format(metrics.http_request_rate) }} req/s</strong></td>
+          <td>—</td>
+          <td><span class="badge badge-ok">ACTIVE</span></td>
+          <td>—</td>
+        </tr>
+        {% endif %}
+        {% if metrics.response_time_avg is not none %}
+        <tr>
+          <td>Response Time (p95)</td>
+          <td><strong>{{ "%.3f"|format(metrics.response_time_avg) }}s</strong></td>
+          <td>SMA baseline</td>
+          <td><span class="badge badge-ok">TRACKED</span></td>
+          <td>{{ metrics.response_time_trend_points | default(0) }} data points</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ ISSUES DETECTED ══ -->
+  <div class="section">
+    <div class="section-title">Issues Detected — Root Cause Analysis</div>
+    {% if analysis.issues %}
+      {% for issue in analysis.issues %}
+      <div class="issue-card {{ issue.severity }}">
+        <div class="ic-head">
+          <div class="ic-title">{{ loop.index }}. {{ issue.issue }}</div>
+          <span class="badge {% if issue.severity == 'CRITICAL' %}badge-crit{% elif issue.severity == 'HIGH' %}badge-high{% else %}badge-warn{% endif %}">
+            {{ issue.severity }}
+          </span>
+        </div>
+        <div class="ic-grid">
+          <div class="ic-row"><label>Metric</label>{{ issue.metric }}</div>
+          <div class="ic-row"><label>Current Value</label>{{ issue.current_value }}</div>
+          <div class="ic-row"><label>Threshold</label>{{ issue.threshold }}</div>
+          <div class="ic-row"><label>Root Cause</label>{{ issue.cause }}</div>
+          <div class="ic-row" style="grid-column: span 2"><label>Recommended Solution</label>{{ issue.solution }}</div>
+          <div class="ic-row" style="grid-column: span 2"><label>Business Impact</label>{{ issue.business_impact }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-issues">✓ All systems operating within normal parameters. No issues detected.</div>
+    {% endif %}
+  </div>
+
+  <!-- ══ BUSINESS IMPACT ══ -->
+  <div class="section">
+    <div class="section-title">Business Impact Assessment</div>
+    {% if analysis.issues %}
+    <table class="impact-table">
+      <thead>
+        <tr>
+          <th>Issue</th>
+          <th>Severity</th>
+          <th>Affected Module</th>
+          <th>Business Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in analysis.issues %}
+        <tr>
+          <td><strong>{{ issue.issue }}</strong></td>
+          <td>
+            <span class="badge {% if issue.severity == 'CRITICAL' %}badge-crit{% elif issue.severity == 'HIGH' %}badge-high{% else %}badge-warn{% endif %}">
+              {{ issue.severity }}
+            </span>
+          </td>
+          <td>
+            {% if "CPU" in issue.metric %}EMS App Server
+            {% elif "Memory" in issue.metric %}EMS Backend / DB
+            {% elif "Error" in issue.metric %}EMS API Layer
+            {% elif "Response" in issue.metric %}EMS Frontend / UX
+            {% else %}EMS Infrastructure{% endif %}
+          </td>
+          <td>{{ issue.business_impact }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="font-size:13px; color:#2e7d32;">No business impact detected at this time.</p>
+    {% endif %}
+  </div>
+
+  <!-- ══ RECOMMENDATIONS ══ -->
+  <div class="section">
+    <div class="section-title">Recommendations</div>
+    {% if analysis.issues %}
+    <ul class="rec-list">
+      {% for issue in analysis.issues %}
+      <li><strong>{{ issue.metric }}:</strong> {{ issue.solution }}</li>
+      {% endfor %}
+      <li><strong>General:</strong> Schedule a weekly infrastructure review meeting with the DevOps team to track recurring issues.</li>
+      <li><strong>General:</strong> Set up Grafana alerting rules to notify on-call engineers before thresholds are breached.</li>
+      <li><strong>General:</strong> Review auto-scaling policies to handle traffic spikes proactively.</li>
+    </ul>
+    {% else %}
+    <ul class="rec-list">
+      <li><strong>Preventive:</strong> Continue monitoring — all metrics are healthy. Review thresholds quarterly.</li>
+      <li><strong>Preventive:</strong> Ensure alerting rules are active in Grafana for early detection.</li>
+    </ul>
+    {% endif %}
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    <span>EMS Monitoring System · Infrastructure Division</span>
+    <span>{{ timestamp }} · Confidential — Internal Use Only</span>
+  </div>
+
+</div>
+</body>
+</html>
