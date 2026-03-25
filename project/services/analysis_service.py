@@ -46,9 +46,9 @@ def detect_trend_spike(trend_data: list) -> Optional[float]:
     return ratio if ratio >= RESPONSE_TIME_SPIKE_RATIO else None
 
 
-def analyze_metrics(metrics: dict) -> dict:
+def _analyze_single_instance(metrics: dict) -> dict:
     """
-    Run rule-based analysis on metrics.
+    Run rule-based analysis on a single instance's metrics.
     Returns structured issues, summary, and recommendations.
     """
     issues = []
@@ -69,7 +69,7 @@ def analyze_metrics(metrics: dict) -> dict:
                 "threshold": f"{CPU_THRESHOLD}%",
                 "severity": "HIGH" if cpu > 90 else "MEDIUM",
                 "issue": "High CPU Utilization",
-                "cause": "Excessive compute load — likely caused by unoptimized queries, background jobs, or traffic spikes.",
+                "cause": "Excessive compute load \u2014 likely caused by unoptimized queries, background jobs, or traffic spikes.",
                 "solution": "Scale horizontally, optimize heavy queries, review cron jobs, or enable auto-scaling.",
                 "business_impact": "Slow response times for EMS users, potential service degradation or downtime."
             })
@@ -103,7 +103,7 @@ def analyze_metrics(metrics: dict) -> dict:
                 "issue": "High HTTP Failure Rate",
                 "cause": "Backend exceptions, misconfigured routes, or downstream service failures.",
                 "solution": "Review application error logs, check dependent services, validate recent deployments.",
-                "business_impact": "Users experiencing failed requests in EMS — impacts payroll, attendance, and HR workflows."
+                "business_impact": "Users experiencing failed requests in EMS \u2014 impacts payroll, attendance, and HR workflows."
             })
         else:
             healthy.append({"metric": "Error Rate", "value": f"{error_rate:.2f}%", "status": "OK"})
@@ -117,9 +117,9 @@ def analyze_metrics(metrics: dict) -> dict:
             "threshold": f"{RESPONSE_TIME_SPIKE_RATIO}x SMA baseline",
             "severity": "HIGH",
             "issue": "Response Time Spike Detected",
-            "cause": f"Response time increased {spike_ratio:.1f}x above moving average baseline — possible DB slowdown or resource contention.",
+            "cause": f"Response time increased {spike_ratio:.1f}x above moving average baseline \u2014 possible DB slowdown or resource contention.",
             "solution": "Check slow query logs, review DB connection pool, inspect recent code changes.",
-            "business_impact": "EMS pages loading slowly — degraded user experience for HR and management teams."
+            "business_impact": "EMS pages loading slowly \u2014 degraded user experience for HR and management teams."
         })
     elif response_time is not None:
         healthy.append({"metric": "Response Time (p95)", "value": f"{response_time:.3f}s", "status": "OK"})
@@ -130,6 +130,14 @@ def analyze_metrics(metrics: dict) -> dict:
         "healthy_metrics": healthy,
         "overall_status": _overall_status(issues)
     }
+
+
+def analyze_metrics(grouped_metrics: dict) -> dict:
+    """Analyze all instances independently and return a grouped analysis dict."""
+    grouped_analysis = {}
+    for instance, metrics in grouped_metrics.items():
+        grouped_analysis[instance] = _analyze_single_instance(metrics)
+    return grouped_analysis
 
 
 def _overall_status(issues: list) -> str:

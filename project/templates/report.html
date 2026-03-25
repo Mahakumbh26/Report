@@ -96,10 +96,17 @@
       <div>Prepared By<span>EMS Monitor API</span></div>
       <div>Audience<span>Business Analyst / Management</span></div>
     </div>
-    <div class="status-pill {{ analysis.overall_status }}">
-      Overall System Status: {{ analysis.overall_status }}
+    <div class="status-pill {{ global_status | default('UNKNOWN') }}">
+      Overall Global Status: {{ global_status | default('UNKNOWN') }}
     </div>
   </div>
+
+  {% for project_name, data in projects.items() %}
+    {% set metrics = data.metrics %}
+    {% set analysis = data.analysis %}
+    <div style="background: #e3e8f0; padding: 15px 48px; font-weight: 800; font-size: 18px; color: #1a237e; border-top: 1px solid #ccc; margin-top: 20px;">
+       Project / Instance: {{ project_name }}
+    </div>
 
   <!-- ══ EXECUTIVE SUMMARY ══ -->
   <div class="section">
@@ -322,6 +329,12 @@
     </ul>
     {% endif %}
   </div>
+
+  {% else %}
+  <div class="section">
+    <div class="no-issues" style="color: #666; background: #eee;">No metrics data found for any projects.</div>
+  </div>
+  {% endfor %}
 
   <!-- ══ FOOTER ══ -->
   <div class="footer">
