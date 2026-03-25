@@ -7,4 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "PORT=${PORT:-8080}; echo Starting on $PORT; exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload"]
+# 🔥 FINAL FIX (NO $PORT HERE)
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120"]
