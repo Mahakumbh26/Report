@@ -7,5 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# 🔥 FINAL FIX (NO $PORT HERE)
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120"]
+# Ensure logs are not buffered so Railway can show them immediately
+ENV PYTHONUNBUFFERED=1
+
+# 🔥 FINAL FIX: Use shell form CMD to correctly expand the $PORT environment variable provided by Railway
+CMD gunicorn app:app --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120
